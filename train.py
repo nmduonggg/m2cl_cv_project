@@ -9,9 +9,6 @@ from model import M2CL18
 from data.DataLoader import get_train_dataloader, augment_transform, get_test_loader
 import argparse
 from test import do_test
-
-lr = 0.01
-num_epochs = 10
 availabel_dataset = ["dslr", "amazon", "webcam"]
 def get_args():
     parser = argparse.ArgumentParser(description="Script to launch jigsaw training", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -20,7 +17,7 @@ def get_args():
     parser.add_argument("--epochs", "-e", type=int, default=50, help="Number of training epochs")
     parser.add_argument("--n_classes", "-c", type=int, default=31, help="Number of classes")
     parser.add_argument("--val_size", type=float, default=0.1, help="Validation size (between 0 and 1)")
-    parser.add_argument("--source", choices=availabel_dataset, help="Training dataset")
+    parser.add_argument("--source", choices=availabel_dataset, help="Training dataset", nargs='+')
     parser.add_argument("--target", choices=availabel_dataset, help="Test dataset" )
     return parser.parse_args()
 if __name__ == "__main__":

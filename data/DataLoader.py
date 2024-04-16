@@ -6,7 +6,6 @@ import torchvision.transforms as transforms
 from PIL import Image
 from random import sample, random
 from os.path import join, dirname
-from concat_dataset import ConcatDataset
 augment_transform = transforms.Compose([
             # transforms.Resize((224,224)),
             transforms.RandomResizedCrop(224, scale=(0.7, 1.0)),
@@ -43,6 +42,8 @@ class MyDataset(data.Dataset):
         
     def __len__(self):
         return len(self.names)
+    
+
 
 def get_random_subset(names, labels, percent):
     """
@@ -96,18 +97,27 @@ def get_split_dataset_info(txt_list, val_percentage):
 def get_train_dataloader(source, batch_size, val_percentage, transform = augment_transform):
     dataset_list = source
     assert isinstance(dataset_list, list)
-    datasets = []
-    val_datasets = []
-    
+    train_name_lst = []
+    train_label_lst = []
+    val_name_lst = []
+    val_label_lst = []
+    # val_datasets = []
+    img_transformer = transform
     for dname in dataset_list:
         name_train, name_val, labels_train, labels_val = get_split_dataset_info(join(dirname(__file__), 'txt_lists', '%s_train.txt' % dname), val_percentage)
-        img_transformer = transform
-        train_dataset = MyDataset(name_train, labels_train, img_transformer=img_transformer)
         
-        datasets.append(train_dataset)
-        val_datasets.append(MyDataset(name_val, labels_val, test_transform))
-    dataset = ConcatDataset(datasets)
-    val_dataset = ConcatDataset(val_datasets)
+        # train_dataset = MyDataset(name_train, labels_train, img_transformer=img_transformer)
+        
+        # datasets.append(train_dataset)
+        train_name_lst += (name_train)
+        train_label_lst += (labels_train)
+        val_name_lst+= (name_val)
+        val_label_lst+=(labels_val)
+        # val_datasets.append(MyDataset(name_val, labels_val, test_transform))
+    # dataset = ConcatDataset(datasets)
+    # val_dataset = ConcatDataset(val_datasets)
+    dataset = MyDataset(train_name_lst, train_label_lst, img_transformer)
+    val_dataset = MyDataset(val_name_lst, val_label_lst, test_transform)
     loader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=True, num_workers=4, pin_memory=True, drop_last=True)
     val_loader = torch.utils.data.DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=4, pin_memory=True, drop_last=False)
     return loader, val_loader
@@ -127,7 +137,8 @@ def get_test_loader(source, batch_size,transform = test_transform):
     return loader
 if __name__ == "__main__":
     
-    train_dataloader, val_loader = get_train_dataloader(["amazon", "dslr", "cartoon"],4,0.2, augment_transform)
+    train_dataloader, val_loader = get_train_dataloader(["amazon", "dslr", 'webcam'],4,0.2, augment_transform)
     print(len(train_dataloader.dataset))
     print(len(val_loader.dataset))
+    
 
