@@ -24,22 +24,6 @@ test_transform = transforms.Compose([
                 mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
         ])
 
-def _dataset_info(txt_labels):
-    with open(txt_labels, 'r') as f:
-        images_list = f.readlines()
-
-    file_names = []
-    labels = []
-    for row in images_list:
-        row = row.split(' ')
-        file_names.append(row[0])
-        labels.append(int(row[1]))
-
-    return file_names, labels
-
-
-
-
 class MyDataset(data.Dataset):
     def __init__(self, names, labels,  img_transformer=test_transform):
         self.data_path = ""
@@ -59,7 +43,24 @@ class MyDataset(data.Dataset):
         
     def __len__(self):
         return len(self.names)
-    
+
+def get_random_subset(names, labels, percent):
+    """
+
+    :param names: list of names
+    :param labels:  list of labels
+    :param percent: 0 < float < 1
+    :return:
+    """
+    samples = len(names)
+    amount = int(samples * percent)
+    random_index = sample(range(samples), amount)
+    name_val = [names[k] for k in random_index]
+    name_train = [v for k, v in enumerate(names) if k not in random_index]
+    labels_val = [labels[k] for k in random_index]
+    labels_train = [v for k, v in enumerate(labels) if k not in random_index]
+    return name_train, name_val, labels_train, labels_val
+  
 def _dataset_info(txt_labels):
     with open(txt_labels, 'r') as f:
         images_list = f.readlines()
@@ -73,7 +74,12 @@ def _dataset_info(txt_labels):
 
     return file_names, labels
 
-def get_train_dataloader(source, batch_size, transform = augment_transform):
+def get_split_dataset_info(txt_list, val_percentage):
+    names, labels = _dataset_info(txt_list)
+    return get_random_subset(names, labels, val_percentage)
+
+
+def get_train_dataloader(source, batch_size,val_percentage, transform = augment_transform):
     dataset_name = source
     
     
@@ -81,11 +87,12 @@ def get_train_dataloader(source, batch_size, transform = augment_transform):
     img_transformer = transform
     
     
-    name_train, labels_train = _dataset_info(join(dirname(__file__), 'txt_lists', '%s_train.txt' % dataset_name))
+    name_train,name_val, labels_train, labels_val = get_split_dataset_info(join(dirname(__file__), 'txt_lists', '%s_train.txt' % dataset_name), val_percentage)
     train_dataset = MyDataset(name_train, labels_train, img_transformer=img_transformer)
+    val_dataset = MyDataset(name_val, labels_val, test_transform)
     loader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=4, pin_memory=True, drop_last=True)
-    
-    return loader
+    val_loader = torch.utils.data.DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=4, pin_memory=True, drop_last=True)
+    return loader, val_loader
 
 def get_test_loader(source, batch_size,transform = test_transform):
     dataset_name = source
@@ -102,6 +109,7 @@ def get_test_loader(source, batch_size,transform = test_transform):
     return loader
 if __name__ == "__main__":
     
-    dataloader = get_train_dataloader("amazon", augment_transform, 4)
-    print(len(dataloader))
+    train_dataloader, val_loader = get_train_dataloader("amazon",4,0.2, augment_transform)
+    print(len(train_dataloader))
+    print(len(val_loader))
 

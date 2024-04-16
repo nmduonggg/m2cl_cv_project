@@ -21,13 +21,14 @@ if __name__ == "__main__":
             weight_decay=0.0005,
             momentum=0.9
         )
-    trainloader = get_train_dataloader('dslr', augment_transform, 4)
+    trainloader, valloader = get_train_dataloader('dslr',4,0.1, augment_transform)
 
     # x = torch.rand((10,3,224,224))
     # y = torch.Tensor([0,0,1,1,1,2,3,4,2,3]).long()
     # preds, conv_act = network(x)
     
     for epoch in range(num_epochs):
+        network.train()
         train_loss = 0
         true_pred = 0
         samples_count = 0
@@ -67,7 +68,14 @@ if __name__ == "__main__":
             # print(f"y pred is {y_pred} and y is {y}")
             true_pred += torch.sum(y_pred == y).item()
             samples_count += y.shape[0]
-            print(y.shape[0])
         print(f"Training loss: {train_loss}, accuracy: {true_pred/len(trainloader)}")
         print(ce_loss)
-            
+
+        ##Validation
+        network.eval()
+        test_loss_epoch = 0
+        for x,y in valloader:
+            preds, conv_act = network(x)
+            test_loss = F.cross_entropy(preds, y)
+            test_loss_epoch += test_loss
+        print(f"Validation loss: {test_loss_epoch}")
