@@ -31,7 +31,6 @@ if __name__ == "__main__":
         network.train()
         train_loss = 0
         true_pred = 0
-        samples_count = 0
         for x,y in trainloader:
             
             preds, conv_act = network(x)
@@ -67,8 +66,7 @@ if __name__ == "__main__":
             y_pred = torch.argmax(preds, 1)
             # print(f"y pred is {y_pred} and y is {y}")
             true_pred += torch.sum(y_pred == y).item()
-            samples_count += y.shape[0]
-        print(f"Training loss: {train_loss}, accuracy: {true_pred/len(trainloader)}")
+        print(f"Training loss: {train_loss}, accuracy: {true_pred/len(trainloader.dataset)}")
         print(ce_loss)
 
         ##Validation
@@ -78,4 +76,5 @@ if __name__ == "__main__":
             preds, conv_act = network(x)
             test_loss = F.cross_entropy(preds, y)
             test_loss_epoch += test_loss
+        test_loss_epoch = test_loss_epoch / len(valloader.dataset)
         print(f"Validation loss: {test_loss_epoch}")

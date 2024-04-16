@@ -110,6 +110,6 @@ def get_test_loader(source, batch_size,transform = test_transform):
 if __name__ == "__main__":
     
     train_dataloader, val_loader = get_train_dataloader("amazon",4,0.2, augment_transform)
-    print(len(train_dataloader))
-    print(len(val_loader))
+    print(len(train_dataloader.dataset))
+    print(len(val_loader.dataset))
 
