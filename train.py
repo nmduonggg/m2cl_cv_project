@@ -6,9 +6,9 @@ from collections import OrderedDict
 import numpy as np
 from loss import my_loss
 from model import M2CL18
-from data.DataLoader import get_train_dataloader, augment_transform
+from data.DataLoader import get_train_dataloader, augment_transform, get_test_loader
 import argparse
-
+from test import do_test
 
 lr = 0.01
 num_epochs = 10
@@ -21,6 +21,7 @@ def get_args():
     parser.add_argument("--n_classes", "-c", type=int, default=31, help="Number of classes")
     parser.add_argument("--val_size", type=float, default=0.1, help="Validation size (between 0 and 1)")
     parser.add_argument("--source", choices=availabel_dataset, help="Training dataset")
+    parser.add_argument("--target", choices=availabel_dataset, help="Test dataset" )
     return parser.parse_args()
 if __name__ == "__main__":
     args = get_args()
@@ -33,7 +34,7 @@ if __name__ == "__main__":
             momentum=0.9
         )
     trainloader, valloader = get_train_dataloader(args.source,args.batch_size,args.val_size, augment_transform)
-
+    testloader = get_test_loader(args.target, args.batch_size)
     # x = torch.rand((10,3,224,224))
     # y = torch.Tensor([0,0,1,1,1,2,3,4,2,3]).long()
     # preds, conv_act = network(x)
@@ -81,11 +82,13 @@ if __name__ == "__main__":
 
         ##Validation
         network.eval()
-        test_loss_epoch = 0
+        val_loss_epoch = 0
         for x,y in valloader:
             preds, conv_act = network(x)
-            test_loss = F.cross_entropy(preds, y)
-            test_loss_epoch += test_loss
-        test_loss_epoch = test_loss_epoch / len(valloader.dataset)
-        print(f"Validation loss: {test_loss_epoch}")
+            val_loss = F.cross_entropy(preds, y)
+            val_loss_epoch += val_loss
+        val_loss_epoch = val_loss_epoch / len(valloader.dataset)
+        print(f"Validation loss: {val_loss_epoch}")
+
+    test_loss = do_test(network, testloader)
     
