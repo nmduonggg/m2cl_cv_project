@@ -20,7 +20,7 @@ def get_args():
     parser.add_argument("--epochs", "-e", type=int, default=50, help="Number of training epochs")
     parser.add_argument("--n_classes", "-c", type=int, default=31, help="Number of classes")
     parser.add_argument("--val_size", type=float, default=0.1, help="Validation size (between 0 and 1)")
-    parser.add_argument("--source", choices=availabel_dataset, help="Training dataset", )
+    parser.add_argument("--source", choices=availabel_dataset, help="Training dataset")
     return parser.parse_args()
 if __name__ == "__main__":
     args = get_args()
@@ -28,7 +28,7 @@ if __name__ == "__main__":
     network = M2CL18(args.n_classes, pretrained=True)
     optimizer = torch.optim.SGD(
             network.parameters(),
-            lr=args.learing_rate,
+            lr=args.learning_rate,
             weight_decay=0.0005,
             momentum=0.9
         )
