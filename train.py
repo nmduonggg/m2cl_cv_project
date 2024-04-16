@@ -7,27 +7,38 @@ import numpy as np
 from loss import my_loss
 from model import M2CL18
 from data.DataLoader import get_train_dataloader, augment_transform
+import argparse
 
 
 lr = 0.01
 num_epochs = 10
-
+availabel_dataset = ["dslr", "amazon", "webcam"]
+def get_args():
+    parser = argparse.ArgumentParser(description="Script to launch jigsaw training", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser.add_argument("--batch_size", "-b", type=int, default=64, help="Batch size")
+    parser.add_argument("--learning_rate", "-l", type=float, default= 0.01, help="Learning rate")
+    parser.add_argument("--epochs", "-e", type=int, default=50, help="Number of training epochs")
+    parser.add_argument("--n_classes", "-c", type=int, default=31, help="Number of classes")
+    parser.add_argument("--val_size", type=float, default=0.1, help="Validation size (between 0 and 1)")
+    parser.add_argument("--source", choices=availabel_dataset, help="Training dataset", )
+    return parser.parse_args()
 if __name__ == "__main__":
-    
-    network = M2CL18(31, pretrained=True)
+    args = get_args()
+
+    network = M2CL18(args.n_classes, pretrained=True)
     optimizer = torch.optim.SGD(
             network.parameters(),
-            lr=lr,
+            lr=args.learing_rate,
             weight_decay=0.0005,
             momentum=0.9
         )
-    trainloader, valloader = get_train_dataloader('dslr',4,0.1, augment_transform)
+    trainloader, valloader = get_train_dataloader(args.source,args.batch_size,args.val_size, augment_transform)
 
     # x = torch.rand((10,3,224,224))
     # y = torch.Tensor([0,0,1,1,1,2,3,4,2,3]).long()
     # preds, conv_act = network(x)
     
-    for epoch in range(num_epochs):
+    for epoch in range(args.epochs):
         network.train()
         train_loss = 0
         true_pred = 0
@@ -66,8 +77,7 @@ if __name__ == "__main__":
             y_pred = torch.argmax(preds, 1)
             # print(f"y pred is {y_pred} and y is {y}")
             true_pred += torch.sum(y_pred == y).item()
-        print(f"Training loss: {train_loss}, accuracy: {true_pred/len(trainloader.dataset)}")
-        print(ce_loss)
+        print(f"Training loss: {train_loss/len(trainloader.dataset)}, accuracy: {true_pred/len(trainloader.dataset)}")
 
         ##Validation
         network.eval()
@@ -78,3 +88,4 @@ if __name__ == "__main__":
             test_loss_epoch += test_loss
         test_loss_epoch = test_loss_epoch / len(valloader.dataset)
         print(f"Validation loss: {test_loss_epoch}")
+    
