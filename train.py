@@ -9,7 +9,7 @@ from model import M2CL18, resnet18
 from data.DataLoader import get_train_dataloader, augment_transform, get_test_loader
 import argparse
 from test import do_test
-import tqdm
+from tqdm import tqdm
 availabel_dataset = ["dslr", "amazon", "webcam", "CALTECH", "LABELME", "PASCAL", "SUN", "art_painting", "cartoon", "photo", "sketch"]
 def get_args():
     parser = argparse.ArgumentParser(description="Script to launch jigsaw training", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
