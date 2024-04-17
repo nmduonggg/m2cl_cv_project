@@ -32,9 +32,7 @@ if __name__ == "__main__":
         )
     trainloader, valloader = get_train_dataloader(args.source,args.batch_size,args.val_size, augment_transform)
     testloader = get_test_loader(args.target, args.batch_size)
-    # x = torch.rand((10,3,224,224))
-    # y = torch.Tensor([0,0,1,1,1,2,3,4,2,3]).long()
-    # preds, conv_act = network(x)
+    
     
     for epoch in range(args.epochs):
         network.train()
@@ -87,5 +85,6 @@ if __name__ == "__main__":
         val_loss_epoch = val_loss_epoch / len(valloader.dataset)
         print(f"Validation loss: {val_loss_epoch}")
 
+    torch.save(network.state_dict(), "ckp.pt")
     test_loss = do_test(network, testloader)
     

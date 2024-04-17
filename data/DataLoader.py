@@ -82,12 +82,7 @@ def get_split_dataset_info(txt_list, val_percentage):
 
 # def get_train_dataloader(source, batch_size,val_percentage, transform = augment_transform):
 #     dataset_name = source
-    
-    
-    
 #     img_transformer = transform
-    
-    
 #     name_train,name_val, labels_train, labels_val = get_split_dataset_info(join(dirname(__file__), 'txt_lists', '%s_train.txt' % dataset_name), val_percentage)
 #     train_dataset = MyDataset(name_train, labels_train, img_transformer=img_transformer)
 #     val_dataset = MyDataset(name_val, labels_val, test_transform)
@@ -106,16 +101,10 @@ def get_train_dataloader(source, batch_size, val_percentage, transform = augment
     for dname in dataset_list:
         name_train, name_val, labels_train, labels_val = get_split_dataset_info(join(dirname(__file__), 'txt_lists', '%s_train.txt' % dname), val_percentage)
         
-        # train_dataset = MyDataset(name_train, labels_train, img_transformer=img_transformer)
-        
-        # datasets.append(train_dataset)
         train_name_lst += (name_train)
         train_label_lst += (labels_train)
         val_name_lst+= (name_val)
         val_label_lst+=(labels_val)
-        # val_datasets.append(MyDataset(name_val, labels_val, test_transform))
-    # dataset = ConcatDataset(datasets)
-    # val_dataset = ConcatDataset(val_datasets)
     dataset = MyDataset(train_name_lst, train_label_lst, img_transformer)
     val_dataset = MyDataset(val_name_lst, val_label_lst, test_transform)
     loader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=True, num_workers=4, pin_memory=True, drop_last=True)
