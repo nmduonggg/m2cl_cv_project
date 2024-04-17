@@ -5,7 +5,7 @@ from torch.hub import load_state_dict_from_url
 from collections import OrderedDict
 import numpy as np
 from loss import my_loss
-from model import M2CL18
+from model import M2CL18, resnet18
 from data.DataLoader import get_train_dataloader, augment_transform, get_test_loader
 import argparse
 from test import do_test
@@ -20,9 +20,8 @@ def get_args():
     parser.add_argument("--source", choices=availabel_dataset, help="Training dataset", nargs='+')
     parser.add_argument("--target", choices=availabel_dataset, help="Test dataset" )
     return parser.parse_args()
-if __name__ == "__main__":
-    args = get_args()
 
+def M2CLTrainer(args):
     network = M2CL18(args.n_classes, pretrained=True)
     optimizer = torch.optim.SGD(
             network.parameters(),
@@ -85,6 +84,71 @@ if __name__ == "__main__":
         val_loss_epoch = val_loss_epoch / len(valloader.dataset)
         print(f"Validation loss: {val_loss_epoch}")
 
-    torch.save(network.state_dict(), "ckp.pt")
+    torch.save(network.state_dict(), "m2cl_ckp.pt")
     test_loss = do_test(network, testloader)
-    
+def BaseRes18Trainer(args):
+    network = resnet18(pretrained=True)
+    optimizer = torch.optim.SGD(
+            network.parameters(),
+            lr=args.learning_rate,
+            weight_decay=0.0005,
+            momentum=0.9
+        )
+    trainloader, valloader = get_train_dataloader(args.source,args.batch_size,args.val_size, augment_transform)
+    testloader = get_test_loader(args.target, args.batch_size)
+
+    for epoch in range(args.epochs):
+        network.train()
+        train_loss = 0
+        true_pred = 0
+        for x,y in trainloader:
+            
+            preds, conv_act = network(x)
+            y_tmp_np = y.cpu().detach().numpy()
+            y_tmp = y_tmp_np.tolist()
+            counts = {}
+            same_indexes_tmp = {}
+            dif_indexes = {}
+            for i in y_tmp:
+                counts[i] = y_tmp.count(i)
+                same_indexes_tmp[i] = np.where(y_tmp_np == i)
+                dif_indexes[i] = np.where(y_tmp_np != i)
+
+            same_indexes_tmp = OrderedDict(sorted(same_indexes_tmp.items()))
+            same_indexes = []
+            for i in range(len(same_indexes_tmp.items())):
+                if i in same_indexes_tmp.keys():
+                    same_indexes.append(torch.combinations(torch.tensor(same_indexes_tmp[i][0])))
+
+            custom_loss = my_loss(conv_act,
+                                same_indexes,
+                                0.01,
+                                1.0)
+
+            ce_loss = F.cross_entropy(preds, y)
+
+            loss = custom_loss + ce_loss
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
+
+            train_loss += loss
+            y_pred = torch.argmax(preds, 1)
+            # print(f"y pred is {y_pred} and y is {y}")
+            true_pred += torch.sum(y_pred == y).item()
+        print(f"Training loss at epoch {epoch}: {train_loss/len(trainloader.dataset)}, accuracy: {true_pred/len(trainloader.dataset)}")
+
+        ##Validation
+        network.eval()
+        val_loss_epoch = 0
+        for x,y in valloader:
+            preds, conv_act = network(x)
+            val_loss = F.cross_entropy(preds, y)
+            val_loss_epoch += val_loss
+        val_loss_epoch = val_loss_epoch / len(valloader.dataset)
+        print(f"Validation loss: {val_loss_epoch}")
+
+    test_loss = do_test(network, testloader)
+if __name__ == "__main__":
+    args = get_args()
+    M2CLTrainer(args)
