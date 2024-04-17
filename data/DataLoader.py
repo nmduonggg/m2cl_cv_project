@@ -107,8 +107,8 @@ def get_train_dataloader(source, batch_size, val_percentage, transform = augment
         val_label_lst+=(labels_val)
     dataset = MyDataset(train_name_lst, train_label_lst, img_transformer)
     val_dataset = MyDataset(val_name_lst, val_label_lst, test_transform)
-    loader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=True, num_workers=4, pin_memory=True, drop_last=True)
-    val_loader = torch.utils.data.DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=4, pin_memory=True, drop_last=False)
+    loader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=True)
+    val_loader = torch.utils.data.DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
     return loader, val_loader
 
 def get_test_loader(source, batch_size,transform = test_transform):
@@ -121,7 +121,7 @@ def get_test_loader(source, batch_size,transform = test_transform):
     
     name_train, labels_train = _dataset_info(join(dirname(__file__), 'txt_lists', '%s_train.txt' % dataset_name))
     train_dataset = MyDataset(name_train, labels_train, img_transformer=img_transformer)
-    loader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=4, pin_memory=True, drop_last=True)
+    loader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
     
     return loader
 if __name__ == "__main__":

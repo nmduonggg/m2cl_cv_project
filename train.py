@@ -9,7 +9,7 @@ from model import M2CL18
 from data.DataLoader import get_train_dataloader, augment_transform, get_test_loader
 import argparse
 from test import do_test
-availabel_dataset = ["dslr", "amazon", "webcam"]
+availabel_dataset = ["dslr", "amazon", "webcam", "CALTECH", "LABELME", "PASCAL", "SUN", "art_painting", "cartoon", "photo", "sketch"]
 def get_args():
     parser = argparse.ArgumentParser(description="Script to launch jigsaw training", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument("--batch_size", "-b", type=int, default=64, help="Batch size")
@@ -73,7 +73,7 @@ if __name__ == "__main__":
             y_pred = torch.argmax(preds, 1)
             # print(f"y pred is {y_pred} and y is {y}")
             true_pred += torch.sum(y_pred == y).item()
-        print(f"Training loss: {train_loss/len(trainloader.dataset)}, accuracy: {true_pred/len(trainloader.dataset)}")
+        print(f"Training loss at epoch {epoch}: {train_loss/len(trainloader.dataset)}, accuracy: {true_pred/len(trainloader.dataset)}")
 
         ##Validation
         network.eval()
