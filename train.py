@@ -20,9 +20,12 @@ def get_args():
     parser.add_argument("--val_size", type=float, default=0.1, help="Validation size (between 0 and 1)")
     parser.add_argument("--source", choices=availabel_dataset, help="Training dataset", nargs='+')
     parser.add_argument("--target", choices=availabel_dataset, help="Test dataset" )
+    parser.add_argument("--model", choices=["m2cl", 'resnet18'], default= "m2cl", help="Model to train")
     return parser.parse_args()
+    
 
 def M2CLTrainer(args):
+    print('Using M2CL')
     network = M2CL18(args.n_classes, pretrained=True)
     optimizer = torch.optim.SGD(
             network.parameters(),
@@ -93,69 +96,64 @@ def M2CLTrainer(args):
 
     torch.save(network.state_dict(), "m2cl_ckp.pt")
     test_loss = do_test(network, testloader)
+
 def BaseRes18Trainer(args):
-    network = resnet18(pretrained=True)
+    print("Using Resnet 18")
+    network = resnet18(pretrained=True, num_classes=args.n_classes)
     optimizer = torch.optim.SGD(
-            network.parameters(),
-            lr=args.learning_rate,
-            weight_decay=0.0005,
-            momentum=0.9
-        )
-    trainloader, valloader = get_train_dataloader(args.source,args.batch_size,args.val_size, augment_transform)
+        network.parameters(),
+        lr=args.learning_rate,
+        weight_decay=0.0005,
+        momentum=0.9
+    )
+    trainloader, valloader = get_train_dataloader(args.source, args.batch_size, args.val_size, augment_transform)
     testloader = get_test_loader(args.target, args.batch_size)
 
     for epoch in range(args.epochs):
         network.train()
         train_loss = 0
         true_pred = 0
-        for x,y in trainloader:
-            
-            preds, conv_act = network(x)
-            y_tmp_np = y.cpu().detach().numpy()
-            y_tmp = y_tmp_np.tolist()
-            counts = {}
-            same_indexes_tmp = {}
-            dif_indexes = {}
-            for i in y_tmp:
-                counts[i] = y_tmp.count(i)
-                same_indexes_tmp[i] = np.where(y_tmp_np == i)
-                dif_indexes[i] = np.where(y_tmp_np != i)
 
-            same_indexes_tmp = OrderedDict(sorted(same_indexes_tmp.items()))
-            same_indexes = []
-            for i in range(len(same_indexes_tmp.items())):
-                if i in same_indexes_tmp.keys():
-                    same_indexes.append(torch.combinations(torch.tensor(same_indexes_tmp[i][0])))
+        # Wrap trainloader with tqdm
+        with tqdm(trainloader, desc=f"Epoch {epoch+1}/{args.epochs}", unit="batch") as t:
+            for x, y in t:
+                network.train()
+                y_pred = network(x)
 
-            custom_loss = my_loss(conv_act,
-                                same_indexes,
-                                0.01,
-                                1.0)
+                loss = F.cross_entropy(y_pred, y)
 
-            ce_loss = F.cross_entropy(preds, y)
+                optimizer.zero_grad()
+                loss.backward()
+                optimizer.step()
 
-            loss = custom_loss + ce_loss
-            optimizer.zero_grad()
-            loss.backward()
-            optimizer.step()
+                train_loss += loss.detach()
+                prediction = torch.argmax(y_pred, 1)
+                true_pred += torch.sum(prediction == y).item()
 
-            train_loss += loss
-            y_pred = torch.argmax(preds, 1)
-            # print(f"y pred is {y_pred} and y is {y}")
-            true_pred += torch.sum(y_pred == y).item()
+                # Update tqdm description
+                t.set_postfix(train_loss=train_loss.item() / len(trainloader.dataset),
+                              accuracy=true_pred / len(trainloader.dataset))
+
         print(f"Training loss at epoch {epoch}: {train_loss/len(trainloader.dataset)}, accuracy: {true_pred/len(trainloader.dataset)}")
 
-        ##Validation
+        # Validation
         network.eval()
         val_loss_epoch = 0
-        for x,y in valloader:
-            preds, conv_act = network(x)
+        for x, y in valloader:
+            preds = network(x)
             val_loss = F.cross_entropy(preds, y)
             val_loss_epoch += val_loss
         val_loss_epoch = val_loss_epoch / len(valloader.dataset)
         print(f"Validation loss: {val_loss_epoch}")
+        del train_loss, loss, val_loss_epoch, val_loss
 
     test_loss = do_test(network, testloader)
+def get_trainer(args):
+    if args.model == "m2cl":
+        M2CLTrainer(args)
+    else:
+        BaseRes18Trainer(args)
 if __name__ == "__main__":
     args = get_args()
-    M2CLTrainer(args)
+    get_trainer(args)
+    
