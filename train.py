@@ -85,7 +85,7 @@ def M2CLTrainer(args):
         for x, y in valloader:
             preds, conv_act = network(x)
             val_loss = F.cross_entropy(preds, y)
-            val_loss_epoch += val_loss
+            val_loss_epoch += val_loss.detach()
             y_pred = torch.argmax(preds, 1)
             test_true_pred += torch.sum(y_pred == y).item()
         val_loss_epoch = val_loss_epoch / len(valloader.dataset)
