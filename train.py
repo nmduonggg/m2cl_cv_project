@@ -70,7 +70,7 @@ def M2CLTrainer(args):
                 loss.backward()
                 optimizer.step()
 
-                train_loss += loss
+                train_loss += loss.detach()
                 y_pred = torch.argmax(preds, 1)
                 true_pred += torch.sum(y_pred == y).item()
 
@@ -81,12 +81,15 @@ def M2CLTrainer(args):
         # Validation
         network.eval()
         val_loss_epoch = 0
+        test_true_pred = 0
         for x, y in valloader:
             preds, conv_act = network(x)
             val_loss = F.cross_entropy(preds, y)
             val_loss_epoch += val_loss
+            y_pred = torch.argmax(preds, 1)
+            test_true_pred += torch.sum(y_pred == y).item()
         val_loss_epoch = val_loss_epoch / len(valloader.dataset)
-        print(f"Validation loss: {val_loss_epoch}")
+        print(f"Validation loss: {val_loss_epoch}, accuracy: {test_true_pred/len(valloader.dataset)}")
 
     torch.save(network.state_dict(), "m2cl_ckp.pt")
     test_loss = do_test(network, testloader)
