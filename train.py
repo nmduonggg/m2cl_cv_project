@@ -40,7 +40,6 @@ def M2CLTrainer(args):
         network.train()
         train_loss = 0
         true_pred = 0
-
         # Wrap trainloader with tqdm
         with tqdm(trainloader, desc=f"Epoch {epoch+1}/{args.epochs}", unit="batch") as t:
             for x, y in t:
@@ -94,7 +93,7 @@ def M2CLTrainer(args):
         val_loss_epoch = val_loss_epoch / len(valloader.dataset)
         print(f"Validation loss: {val_loss_epoch}, accuracy: {test_true_pred/len(valloader.dataset)}")
 
-    torch.save(network.state_dict(), "m2cl_ckp.pt")
+    torch.save(network.state_dict(), "checkpoint/m2cl_ckp.pt")
     test_loss = do_test(network, testloader)
 
 def BaseRes18Trainer(args):
