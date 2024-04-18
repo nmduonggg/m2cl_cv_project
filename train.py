@@ -8,7 +8,7 @@ from loss import my_loss
 from model import M2CL18, resnet18
 from data.DataLoader import get_train_dataloader, augment_transform, get_test_loader
 import argparse
-from test import do_test
+from test import do_test, do_test_resnet
 from tqdm import tqdm
 availabel_dataset = ["dslr", "amazon", "webcam", "CALTECH", "LABELME", "PASCAL", "SUN", "art_painting", "cartoon", "photo", "sketch"]
 def get_args():
@@ -146,7 +146,7 @@ def BaseRes18Trainer(args):
         print(f"Validation loss: {val_loss_epoch}")
         del train_loss, loss, val_loss_epoch, val_loss
 
-    test_loss = do_test(network, testloader)
+    test_loss = do_test_resnet(network, testloader)
 
 def get_trainer(args):
     if args.model == "m2cl":
