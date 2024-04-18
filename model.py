@@ -519,7 +519,7 @@ class TestModel(nn.Module):
 class M2CL18(nn.Module):
     def __init__(self, classes, features=200, p=4, pretrained=True):
         super(M2CL18, self).__init__()
-        resnet = resnet18(pretrained=pretrained)
+        resnet = resnet18(pretrained=pretrained, n_classes=classes)
         self.classes = classes
         self.features = features
 
