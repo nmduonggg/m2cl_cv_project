@@ -130,7 +130,6 @@ class ResNet(nn.Module):
                  groups=1, width_per_group=64, replace_stride_with_dilation=None,
                  norm_layer=None):
         super(ResNet, self).__init__()
-        print(num_classes)
         if norm_layer is None:
             norm_layer = nn.BatchNorm2d
         self._norm_layer = norm_layer
@@ -201,7 +200,8 @@ class ResNet(nn.Module):
                                 norm_layer=norm_layer))
 
         return nn.Sequential(*layers)
-
+    def set_classes(self,num_classes):
+        self.fc = nn.Linear(512 * self.block.expansion, num_classes)
     def _forward_impl(self, x):
         # See note [TorchScript super()]
         x = self.conv1(x)
@@ -226,15 +226,16 @@ class ResNet(nn.Module):
 
 def _resnet(arch, block, layers, pretrained, progress, **kwargs):
     model = ResNet(block, layers,  **kwargs)
-    print(model)
     if pretrained:
+        model.set_classes(1000)
         state_dict = load_state_dict_from_url(model_urls[arch],
                                               progress=progress)
         model.load_state_dict(state_dict)
+        
     return model
 
 
-def resnet18(pretrained=False, progress=True, **kwargs):
+def resnet18(n_classes,pretrained=False, progress=True, **kwargs):
     r"""ResNet-18 model from
     `"Deep Residual Learning for Image Recognition" <https://arxiv.org/pdf/1512.03385.pdf>`_
 
@@ -244,6 +245,7 @@ def resnet18(pretrained=False, progress=True, **kwargs):
     """
     net = _resnet('resnet18', BasicBlock, [2, 2, 2, 2], pretrained, progress,
                    **kwargs)
+    net.set_classes(n_classes)
     return net
 class ConcentrationPipeline(nn.Module):
     """Process intermediate conv outputs and compress them.
