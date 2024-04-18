@@ -100,6 +100,7 @@ def M2CLTrainer(args):
 def BaseRes18Trainer(args):
     print("Using Resnet 18")
     network = resnet18(pretrained=True, num_classes=args.n_classes)
+    # print(network)
     optimizer = torch.optim.SGD(
         network.parameters(),
         lr=args.learning_rate,
@@ -108,8 +109,9 @@ def BaseRes18Trainer(args):
     )
     trainloader, valloader = get_train_dataloader(args.source, args.batch_size, args.val_size, augment_transform)
     testloader = get_test_loader(args.target, args.batch_size)
-
+    # print(network)
     for epoch in range(args.epochs):
+        break
         network.train()
         train_loss = 0
         true_pred = 0
@@ -147,7 +149,7 @@ def BaseRes18Trainer(args):
         print(f"Validation loss: {val_loss_epoch}")
         del train_loss, loss, val_loss_epoch, val_loss
 
-    test_loss = do_test(network, testloader)
+    # test_loss = do_test(network, testloader)
 def get_trainer(args):
     if args.model == "m2cl":
         M2CLTrainer(args)
