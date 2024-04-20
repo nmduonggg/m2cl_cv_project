@@ -21,6 +21,7 @@ def get_args():
     parser.add_argument("--source", choices=availabel_dataset, help="Training dataset", nargs='+')
     parser.add_argument("--target", choices=availabel_dataset, help="Test dataset" )
     parser.add_argument("--model", choices=["m2cl", 'resnet18'], default= "m2cl", help="Model to train")
+    parser.add_argument("--saved_epoch", type=int, default= 20, help="Save model weight from this epoch")
     return parser.parse_args()
     
 
@@ -92,8 +93,8 @@ def M2CLTrainer(args):
             test_true_pred += torch.sum(y_pred == y).item()
         val_loss_epoch = val_loss_epoch / len(valloader.dataset)
         print(f"Validation loss: {val_loss_epoch}, accuracy: {test_true_pred/len(valloader.dataset)}")
-
-    torch.save(network.state_dict(), "checkpoint/m2cl_ckp.pt")
+        if epoch > args.saved_epoch:
+            torch.save(network.state_dict(), f"checkpoint/m2cl_ckp_ep_{epoch}.pt")
     test_loss = do_test(network, testloader)
 
 def BaseRes18Trainer(args):
