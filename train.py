@@ -146,7 +146,8 @@ def BaseRes18Trainer(args):
         val_loss_epoch = val_loss_epoch / len(valloader.dataset)
         print(f"Validation loss: {val_loss_epoch}")
         del train_loss, loss, val_loss_epoch, val_loss
-
+        if epoch > args.saved_epoch:
+            torch.save(network.state_dict(), f"checkpoint/m2cl_ckp_ep_{epoch}.pt")
     test_loss = do_test_resnet(network, testloader)
 
 def get_trainer(args):
