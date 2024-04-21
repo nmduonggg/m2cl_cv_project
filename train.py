@@ -40,74 +40,74 @@ def M2CLTrainer(args):
     if args.checkpoint_path:
         network.load_state_dict(torch.load(args.checkpoint_path))
 
-    # #Get data
-    # trainloader, valloader = get_train_dataloader(args.source,args.batch_size,args.val_size, augment_transform)
-    # testloader = get_test_loader(args.target, args.batch_size)
+    #Get data
+    trainloader, valloader = get_train_dataloader(args.source,args.batch_size,args.val_size, augment_transform)
+    testloader = get_test_loader(args.target, args.batch_size)
     
-    # for epoch in range(args.epochs):
-    #     network.train()
-    #     train_loss = 0
-    #     true_pred = 0
-    #     # Wrap trainloader with tqdm
-    #     with tqdm(trainloader, desc=f"Epoch {epoch+1}/{args.epochs}", unit="batch") as t:
-    #         for x, y in t:
-    #             preds, conv_act = network(x)
-    #             y_tmp_np = y.cpu().detach().numpy()
-    #             y_tmp = y_tmp_np.tolist()
-    #             counts = {}
-    #             same_indexes_tmp = {}
-    #             dif_indexes = {}
-    #             for i in y_tmp:
-    #                 counts[i] = y_tmp.count(i)
-    #                 same_indexes_tmp[i] = np.where(y_tmp_np == i)
-    #                 dif_indexes[i] = np.where(y_tmp_np != i)
+    for epoch in range(args.epochs):
+        network.train()
+        train_loss = 0
+        true_pred = 0
+        # Wrap trainloader with tqdm
+        with tqdm(trainloader, desc=f"Epoch {epoch+1}/{args.epochs}", unit="batch") as t:
+            for x, y in t:
+                preds, conv_act = network(x)
+                y_tmp_np = y.cpu().detach().numpy()
+                y_tmp = y_tmp_np.tolist()
+                counts = {}
+                same_indexes_tmp = {}
+                dif_indexes = {}
+                for i in y_tmp:
+                    counts[i] = y_tmp.count(i)
+                    same_indexes_tmp[i] = np.where(y_tmp_np == i)
+                    dif_indexes[i] = np.where(y_tmp_np != i)
 
-    #             same_indexes_tmp = OrderedDict(sorted(same_indexes_tmp.items()))
-    #             same_indexes = []
-    #             for i in range(len(same_indexes_tmp.items())):
-    #                 if i in same_indexes_tmp.keys():
-    #                     same_indexes.append(torch.combinations(torch.tensor(same_indexes_tmp[i][0])))
+                same_indexes_tmp = OrderedDict(sorted(same_indexes_tmp.items()))
+                same_indexes = []
+                for i in range(len(same_indexes_tmp.items())):
+                    if i in same_indexes_tmp.keys():
+                        same_indexes.append(torch.combinations(torch.tensor(same_indexes_tmp[i][0])))
 
-    #             custom_loss = my_loss(conv_act,
-    #                                 same_indexes,
-    #                                 0.01,
-    #                                 1.0)
+                custom_loss = my_loss(conv_act,
+                                    same_indexes,
+                                    0.01,
+                                    1.0)
 
-    #             ce_loss = F.cross_entropy(preds, y)
+                ce_loss = F.cross_entropy(preds, y)
 
-    #             loss = custom_loss + ce_loss
-    #             optimizer.zero_grad()
-    #             loss.backward()
-    #             optimizer.step()
+                loss = custom_loss + ce_loss
+                optimizer.zero_grad()
+                loss.backward()
+                optimizer.step()
 
-    #             train_loss += loss.detach()
-    #             y_pred = torch.argmax(preds, 1)
-    #             true_pred += torch.sum(y_pred == y).item()
+                train_loss += loss.detach()
+                y_pred = torch.argmax(preds, 1)
+                true_pred += torch.sum(y_pred == y).item()
 
-    #             # Update tqdm description
-    #             t.set_postfix(train_loss=train_loss.item() / len(trainloader.dataset),
-    #                           accuracy=true_pred / len(trainloader.dataset))
+                # Update tqdm description
+                t.set_postfix(train_loss=train_loss.item() / len(trainloader.dataset),
+                              accuracy=true_pred / len(trainloader.dataset))
 
-    #     # Validation
-    #     network.eval()
-    #     val_loss_epoch = 0
-    #     test_true_pred = 0
-    #     for x, y in valloader:
-    #         preds, conv_act = network(x)
-    #         val_loss = F.cross_entropy(preds, y)
-    #         val_loss_epoch += val_loss.detach()
-    #         y_pred = torch.argmax(preds, 1)
-    #         test_true_pred += torch.sum(y_pred == y).item()
-    #     val_loss_epoch = val_loss_epoch / len(valloader.dataset)
-    #     print(f"Validation loss: {val_loss_epoch}, accuracy: {test_true_pred/len(valloader.dataset)}")
-    #     if epoch > args.saved_epoch:
-    #         # checkpoint = {
-    #         #     'model_state': network.state_dict(),
-    #         #     'optimizer_state': optimizer.state_dict()
-    #         # }
-    #         # torch.save(checkpoint, f"checkpoint/m2cl_ckp_ep_{epoch}.pt")
-    #         torch.save(network.state_dict(), f"checkpoint/m2cl_ckp_ep_{epoch}.pt")
-    # test_loss = do_test(network, testloader)
+        # Validation
+        network.eval()
+        val_loss_epoch = 0
+        test_true_pred = 0
+        for x, y in valloader:
+            preds, conv_act = network(x)
+            val_loss = F.cross_entropy(preds, y)
+            val_loss_epoch += val_loss.detach()
+            y_pred = torch.argmax(preds, 1)
+            test_true_pred += torch.sum(y_pred == y).item()
+        val_loss_epoch = val_loss_epoch / len(valloader.dataset)
+        print(f"Validation loss: {val_loss_epoch}, accuracy: {test_true_pred/len(valloader.dataset)}")
+        if epoch > args.saved_epoch:
+            # checkpoint = {
+            #     'model_state': network.state_dict(),
+            #     'optimizer_state': optimizer.state_dict()
+            # }
+            # torch.save(checkpoint, f"checkpoint/m2cl_ckp_ep_{epoch}.pt")
+            torch.save(network.state_dict(), f"checkpoint/m2cl_ckp_ep_{epoch}.pt")
+    test_loss = do_test(network, testloader)
 
 def BaseRes18Trainer(args):
     print("Using Resnet 18")
