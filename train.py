@@ -38,7 +38,10 @@ def M2CLTrainer(args):
     
     #Load checkpoint
     if args.checkpoint_path:
-        network.load_state_dict(torch.load(args.checkpoint_path))
+        checkpoint = torch.load(args.checkpoint_path)
+        network.load_state_dict(checkpoint['model_state'])
+        optimizer.load_state_dict(checkpoint['optimizer_state'])
+        print("Successfully load checkpoint!")
 
     #Get data
     trainloader, valloader = get_train_dataloader(args.source,args.batch_size,args.val_size, augment_transform)
@@ -101,12 +104,12 @@ def M2CLTrainer(args):
         val_loss_epoch = val_loss_epoch / len(valloader.dataset)
         print(f"Validation loss: {val_loss_epoch}, accuracy: {test_true_pred/len(valloader.dataset)}")
         if epoch > args.saved_epoch:
-            # checkpoint = {
-            #     'model_state': network.state_dict(),
-            #     'optimizer_state': optimizer.state_dict()
-            # }
-            # torch.save(checkpoint, f"checkpoint/m2cl_ckp_ep_{epoch}.pt")
-            torch.save(network.state_dict(), f"checkpoint/m2cl_ckp_ep_{epoch}.pt")
+            checkpoint = {
+                'model_state': network.state_dict(),
+                'optimizer_state': optimizer.state_dict()
+            }
+            torch.save(checkpoint, f"checkpoint/m2cl_ckp_ep_{epoch}.pt")
+            # torch.save(network.state_dict(), f"checkpoint/m2cl_ckp_ep_{epoch}.pt")
     test_loss = do_test(network, testloader)
 
 def BaseRes18Trainer(args):
@@ -119,6 +122,13 @@ def BaseRes18Trainer(args):
         weight_decay=0.0005,
         momentum=0.9
     )
+    #Load checkpoint
+    if args.checkpoint_path:
+        checkpoint = torch.load(args.checkpoint_path)
+        network.load_state_dict(checkpoint['model_state'])
+        optimizer.load_state_dict(checkpoint['optimizer_state'])
+        print("Successfully load checkpoint!")
+    #Get data
     trainloader, valloader = get_train_dataloader(args.source, args.batch_size, args.val_size, augment_transform)
     testloader = get_test_loader(args.target, args.batch_size)
     for epoch in range(args.epochs):
@@ -159,7 +169,12 @@ def BaseRes18Trainer(args):
         print(f"Validation loss: {val_loss_epoch}")
         del train_loss, loss, val_loss_epoch, val_loss
         if epoch > args.saved_epoch:
-            torch.save(network.state_dict(), f"checkpoint/res18_ckp_ep_{epoch}.pt")
+            checkpoint = {
+                'model_state': network.state_dict(),
+                'optimizer_state': optimizer.state_dict()
+            }
+            torch.save(checkpoint, f"checkpoint/res18_ckp_ep_{epoch}.pt")
+            # torch.save(network.state_dict(), f"checkpoint/res18_ckp_ep_{epoch}.pt")
     test_loss = do_test_resnet(network, testloader)
 
 def get_trainer(args):
