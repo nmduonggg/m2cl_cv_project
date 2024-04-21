@@ -22,6 +22,7 @@ def get_args():
     parser.add_argument("--target", choices=availabel_dataset, help="Test dataset" )
     parser.add_argument("--model", choices=["m2cl", 'resnet18'], default= "m2cl", help="Model to train")
     parser.add_argument("--saved_epoch", type=int, default= 20, help="Save model weight from this epoch")
+    parser.add_argument("--checkpoint_path", "-p", type=str, default=None, help="Path to checkpoint")
     return parser.parse_args()
     
 
@@ -34,68 +35,79 @@ def M2CLTrainer(args):
             weight_decay=0.0005,
             momentum=0.9
         )
-    trainloader, valloader = get_train_dataloader(args.source,args.batch_size,args.val_size, augment_transform)
-    testloader = get_test_loader(args.target, args.batch_size)
     
-    for epoch in range(args.epochs):
-        network.train()
-        train_loss = 0
-        true_pred = 0
-        # Wrap trainloader with tqdm
-        with tqdm(trainloader, desc=f"Epoch {epoch+1}/{args.epochs}", unit="batch") as t:
-            for x, y in t:
-                preds, conv_act = network(x)
-                y_tmp_np = y.cpu().detach().numpy()
-                y_tmp = y_tmp_np.tolist()
-                counts = {}
-                same_indexes_tmp = {}
-                dif_indexes = {}
-                for i in y_tmp:
-                    counts[i] = y_tmp.count(i)
-                    same_indexes_tmp[i] = np.where(y_tmp_np == i)
-                    dif_indexes[i] = np.where(y_tmp_np != i)
+    #Load checkpoint
+    if args.checkpoint_path:
+        network.load_state_dict(torch.load(args.checkpoint_path))
 
-                same_indexes_tmp = OrderedDict(sorted(same_indexes_tmp.items()))
-                same_indexes = []
-                for i in range(len(same_indexes_tmp.items())):
-                    if i in same_indexes_tmp.keys():
-                        same_indexes.append(torch.combinations(torch.tensor(same_indexes_tmp[i][0])))
+    # #Get data
+    # trainloader, valloader = get_train_dataloader(args.source,args.batch_size,args.val_size, augment_transform)
+    # testloader = get_test_loader(args.target, args.batch_size)
+    
+    # for epoch in range(args.epochs):
+    #     network.train()
+    #     train_loss = 0
+    #     true_pred = 0
+    #     # Wrap trainloader with tqdm
+    #     with tqdm(trainloader, desc=f"Epoch {epoch+1}/{args.epochs}", unit="batch") as t:
+    #         for x, y in t:
+    #             preds, conv_act = network(x)
+    #             y_tmp_np = y.cpu().detach().numpy()
+    #             y_tmp = y_tmp_np.tolist()
+    #             counts = {}
+    #             same_indexes_tmp = {}
+    #             dif_indexes = {}
+    #             for i in y_tmp:
+    #                 counts[i] = y_tmp.count(i)
+    #                 same_indexes_tmp[i] = np.where(y_tmp_np == i)
+    #                 dif_indexes[i] = np.where(y_tmp_np != i)
 
-                custom_loss = my_loss(conv_act,
-                                    same_indexes,
-                                    0.01,
-                                    1.0)
+    #             same_indexes_tmp = OrderedDict(sorted(same_indexes_tmp.items()))
+    #             same_indexes = []
+    #             for i in range(len(same_indexes_tmp.items())):
+    #                 if i in same_indexes_tmp.keys():
+    #                     same_indexes.append(torch.combinations(torch.tensor(same_indexes_tmp[i][0])))
 
-                ce_loss = F.cross_entropy(preds, y)
+    #             custom_loss = my_loss(conv_act,
+    #                                 same_indexes,
+    #                                 0.01,
+    #                                 1.0)
 
-                loss = custom_loss + ce_loss
-                optimizer.zero_grad()
-                loss.backward()
-                optimizer.step()
+    #             ce_loss = F.cross_entropy(preds, y)
 
-                train_loss += loss.detach()
-                y_pred = torch.argmax(preds, 1)
-                true_pred += torch.sum(y_pred == y).item()
+    #             loss = custom_loss + ce_loss
+    #             optimizer.zero_grad()
+    #             loss.backward()
+    #             optimizer.step()
 
-                # Update tqdm description
-                t.set_postfix(train_loss=train_loss.item() / len(trainloader.dataset),
-                              accuracy=true_pred / len(trainloader.dataset))
+    #             train_loss += loss.detach()
+    #             y_pred = torch.argmax(preds, 1)
+    #             true_pred += torch.sum(y_pred == y).item()
 
-        # Validation
-        network.eval()
-        val_loss_epoch = 0
-        test_true_pred = 0
-        for x, y in valloader:
-            preds, conv_act = network(x)
-            val_loss = F.cross_entropy(preds, y)
-            val_loss_epoch += val_loss.detach()
-            y_pred = torch.argmax(preds, 1)
-            test_true_pred += torch.sum(y_pred == y).item()
-        val_loss_epoch = val_loss_epoch / len(valloader.dataset)
-        print(f"Validation loss: {val_loss_epoch}, accuracy: {test_true_pred/len(valloader.dataset)}")
-        if epoch > args.saved_epoch:
-            torch.save(network.state_dict(), f"checkpoint/m2cl_ckp_ep_{epoch}.pt")
-    test_loss = do_test(network, testloader)
+    #             # Update tqdm description
+    #             t.set_postfix(train_loss=train_loss.item() / len(trainloader.dataset),
+    #                           accuracy=true_pred / len(trainloader.dataset))
+
+    #     # Validation
+    #     network.eval()
+    #     val_loss_epoch = 0
+    #     test_true_pred = 0
+    #     for x, y in valloader:
+    #         preds, conv_act = network(x)
+    #         val_loss = F.cross_entropy(preds, y)
+    #         val_loss_epoch += val_loss.detach()
+    #         y_pred = torch.argmax(preds, 1)
+    #         test_true_pred += torch.sum(y_pred == y).item()
+    #     val_loss_epoch = val_loss_epoch / len(valloader.dataset)
+    #     print(f"Validation loss: {val_loss_epoch}, accuracy: {test_true_pred/len(valloader.dataset)}")
+    #     if epoch > args.saved_epoch:
+    #         # checkpoint = {
+    #         #     'model_state': network.state_dict(),
+    #         #     'optimizer_state': optimizer.state_dict()
+    #         # }
+    #         # torch.save(checkpoint, f"checkpoint/m2cl_ckp_ep_{epoch}.pt")
+    #         torch.save(network.state_dict(), f"checkpoint/m2cl_ckp_ep_{epoch}.pt")
+    # test_loss = do_test(network, testloader)
 
 def BaseRes18Trainer(args):
     print("Using Resnet 18")
@@ -147,7 +159,7 @@ def BaseRes18Trainer(args):
         print(f"Validation loss: {val_loss_epoch}")
         del train_loss, loss, val_loss_epoch, val_loss
         if epoch > args.saved_epoch:
-            torch.save(network.state_dict(), f"checkpoint/m2cl_ckp_ep_{epoch}.pt")
+            torch.save(network.state_dict(), f"checkpoint/res18_ckp_ep_{epoch}.pt")
     test_loss = do_test_resnet(network, testloader)
 
 def get_trainer(args):
