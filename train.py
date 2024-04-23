@@ -10,7 +10,10 @@ from data.DataLoader import get_train_dataloader, augment_transform, get_test_lo
 import argparse
 from test import do_test, do_test_resnet
 from tqdm import tqdm
+
 availabel_dataset = ["dslr", "amazon", "webcam", "CALTECH", "LABELME", "PASCAL", "SUN", "art_painting", "cartoon", "photo", "sketch"]
+device ='cuda' if torch.cuda.is_available() else 'cpu'
+
 def get_args():
     parser = argparse.ArgumentParser(description="Script to launch jigsaw training", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument("--batch_size", "-b", type=int, default=64, help="Batch size")
@@ -29,6 +32,7 @@ def get_args():
 def M2CLTrainer(args):
     print('Using M2CL')
     network = M2CL18(args.n_classes, pretrained=True)
+    
     optimizer = torch.optim.SGD(
             network.parameters(),
             lr=args.learning_rate,
@@ -42,7 +46,7 @@ def M2CLTrainer(args):
         network.load_state_dict(checkpoint['model_state'])
         optimizer.load_state_dict(checkpoint['optimizer_state'])
         print("Successfully load checkpoint!")
-
+    network.to(device)
     #Get data
     trainloader, valloader = get_train_dataloader(args.source,args.batch_size,args.val_size, augment_transform)
     testloader = get_test_loader(args.target, args.batch_size)
@@ -54,6 +58,7 @@ def M2CLTrainer(args):
         # Wrap trainloader with tqdm
         with tqdm(trainloader, desc=f"Epoch {epoch+1}/{args.epochs}", unit="batch") as t:
             for x, y in t:
+                x,y = x.to(device), y.to(device)
                 preds, conv_act = network(x)
                 y_tmp_np = y.cpu().detach().numpy()
                 y_tmp = y_tmp_np.tolist()
@@ -96,6 +101,7 @@ def M2CLTrainer(args):
         val_loss_epoch = 0
         test_true_pred = 0
         for x, y in valloader:
+            x,y = x.to(device), y.to(device)
             preds, conv_act = network(x)
             val_loss = F.cross_entropy(preds, y)
             val_loss_epoch += val_loss.detach()
@@ -110,11 +116,12 @@ def M2CLTrainer(args):
             }
             torch.save(checkpoint, f"checkpoint/m2cl_ckp_ep_{epoch}.pt")
             # torch.save(network.state_dict(), f"checkpoint/m2cl_ckp_ep_{epoch}.pt")
-    test_loss = do_test(network, testloader)
+    test_loss = do_test(network, testloader, device)
 
 def BaseRes18Trainer(args):
     print("Using Resnet 18")
     network = resnet18(pretrained=True, n_classes=args.n_classes)
+    
     # print(network)
     optimizer = torch.optim.SGD(
         network.parameters(),
@@ -128,6 +135,7 @@ def BaseRes18Trainer(args):
         network.load_state_dict(checkpoint['model_state'])
         optimizer.load_state_dict(checkpoint['optimizer_state'])
         print("Successfully load checkpoint!")
+    network.to(device)
     #Get data
     trainloader, valloader = get_train_dataloader(args.source, args.batch_size, args.val_size, augment_transform)
     testloader = get_test_loader(args.target, args.batch_size)
@@ -139,6 +147,7 @@ def BaseRes18Trainer(args):
         # Wrap trainloader with tqdm
         with tqdm(trainloader, desc=f"Epoch {epoch+1}/{args.epochs}", unit="batch") as t:
             for x, y in t:
+                x,y = x.to(device), y.to(device)
                 network.train()
                 y_pred = network(x)
 
@@ -162,6 +171,7 @@ def BaseRes18Trainer(args):
         network.eval()
         val_loss_epoch = 0
         for x, y in valloader:
+            x,y = x.to(device), y.to(device)
             preds = network(x)
             val_loss = F.cross_entropy(preds, y)
             val_loss_epoch += val_loss
@@ -175,7 +185,7 @@ def BaseRes18Trainer(args):
             }
             torch.save(checkpoint, f"checkpoint/res18_ckp_ep_{epoch}.pt")
             # torch.save(network.state_dict(), f"checkpoint/res18_ckp_ep_{epoch}.pt")
-    test_loss = do_test_resnet(network, testloader)
+    test_loss = do_test_resnet(network, testloader, device)
 
 def get_trainer(args):
     if args.model == "m2cl":
