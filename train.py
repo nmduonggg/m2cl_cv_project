@@ -191,9 +191,9 @@ def BaseRes18Trainer(args):
             # torch.save(network.state_dict(), f"checkpoint/res18_ckp_ep_{epoch}.pt")
         if args.test_all_epoch:
 
-            test_loss = do_test(network, testloader, device)
+            test_loss = do_test_resnet(network, testloader, device)
     if not args.test_all_epoch:
-        test_loss = do_test(network, testloader, device)
+        test_loss = do_test_resnet(network, testloader, device)
 
 def get_trainer(args):
     if args.model == "m2cl":
