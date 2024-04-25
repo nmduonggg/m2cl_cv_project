@@ -178,7 +178,7 @@ def BaseRes18Trainer(args):
             x,y = x.to(device), y.to(device)
             preds = network(x)
             val_loss = F.cross_entropy(preds, y)
-            val_loss_epoch += val_loss
+            val_loss_epoch += val_loss.detach()
         val_loss_epoch = val_loss_epoch / len(valloader.dataset)
         print(f"Validation loss: {val_loss_epoch}")
         del train_loss, loss, val_loss_epoch, val_loss
