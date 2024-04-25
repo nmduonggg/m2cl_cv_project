@@ -26,6 +26,7 @@ def get_args():
     parser.add_argument("--model", choices=["m2cl", 'resnet18'], default= "m2cl", help="Model to train")
     parser.add_argument("--saved_epoch", type=int, default= 20, help="Save model weight from this epoch")
     parser.add_argument("--checkpoint_path", "-p", type=str, default=None, help="Path to checkpoint")
+    parser.add_argument("--test_all_epoch", action="store_true", help="Test on target domain after each epoch")
     return parser.parse_args()
     
 
@@ -116,8 +117,11 @@ def M2CLTrainer(args):
             }
             torch.save(checkpoint, f"checkpoint/m2cl_ckp_ep_{epoch}.pt")
             # torch.save(network.state_dict(), f"checkpoint/m2cl_ckp_ep_{epoch}.pt")
-    test_loss = do_test(network, testloader, device)
+        if args.test_all_epoch:
 
+            test_loss = do_test(network, testloader, device)
+    if not args.test_all_epoch:
+        test_loss = do_test(network, testloader, device)
 def BaseRes18Trainer(args):
     print("Using Resnet 18")
     network = resnet18(pretrained=True, n_classes=args.n_classes)
@@ -185,7 +189,11 @@ def BaseRes18Trainer(args):
             }
             torch.save(checkpoint, f"checkpoint/res18_ckp_ep_{epoch}.pt")
             # torch.save(network.state_dict(), f"checkpoint/res18_ckp_ep_{epoch}.pt")
-    test_loss = do_test_resnet(network, testloader, device)
+        if args.test_all_epoch:
+
+            test_loss = do_test(network, testloader, device)
+    if not args.test_all_epoch:
+        test_loss = do_test(network, testloader, device)
 
 def get_trainer(args):
     if args.model == "m2cl":
