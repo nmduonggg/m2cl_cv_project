@@ -20,6 +20,8 @@ def my_loss(scale_activations, same_indexes,  parameter,
     for i in range(nmodules):
         l_loss = layer_loss(scale_activations[i], same_indexes, temperature)
         l_loss = l_loss * parameter
+        if i >= nmodules // 3 * 2:
+            l_loss = l_loss * 2
         # loss2.append(l_loss) #debug
         loss -= l_loss
 
