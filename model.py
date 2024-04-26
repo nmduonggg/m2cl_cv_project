@@ -857,8 +857,8 @@ class M2CL18(nn.Module):
             # add02_0, add04_0,
             add05_0, add06_0, add07_0], 1)
         
-        reweight_hc = self.reweight_fc(hc)
-        hc = torch.sigmoid(reweight_hc) * hc
+        # reweight_hc = self.reweight_fc(hc)
+        # hc = torch.sigmoid(reweight_hc) * hc
 
         out_conv = [out1_conv, out2_conv, out3_conv, out5_conv,
                     out8_conv, out11_conv, out12_conv, out14_conv, out15_conv,

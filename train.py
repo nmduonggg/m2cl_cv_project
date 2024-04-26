@@ -123,6 +123,7 @@ def M2CLTrainer(args):
             test_loss = do_test(network, testloader, device)
     if not args.test_all_epoch:
         test_loss = do_test(network, testloader, device)
+        
 def BaseRes18Trainer(args):
     print("Using Resnet 18")
     network = resnet18(pretrained=True, n_classes=args.n_classes)
