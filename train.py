@@ -27,6 +27,7 @@ def get_args():
     parser.add_argument("--saved_epoch", type=int, default= 20, help="Save model weight from this epoch")
     parser.add_argument("--checkpoint_path", "-p", type=str, default=None, help="Path to checkpoint")
     parser.add_argument("--test_all_epoch", action="store_true", help="Test on target domain after each epoch")
+    parser.add_argument("--contrastive_weight", type=float, default=0.01, help="contrastive weight")
     return parser.parse_args()
     
 
@@ -79,8 +80,8 @@ def M2CLTrainer(args):
 
                 custom_loss = my_loss(conv_act,
                                     same_indexes,
-                                    0.01,
-                                    1.0)
+                                    args.contrastive_weight,
+                                    0.2)
 
                 ce_loss = F.cross_entropy(preds, y)
 
