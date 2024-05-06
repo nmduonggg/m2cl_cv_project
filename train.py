@@ -232,7 +232,7 @@ def BaseRes18Trainer(args):
     network.load_state_dict(checkpoint['model_state'])
     print("Load best checkpoint!")
     
-    test_loss = do_test(network, testloader, device)
+    test_loss = do_test_resnet(network, testloader, device)
 
 def get_trainer(args):
     if args.model == "m2cl":
