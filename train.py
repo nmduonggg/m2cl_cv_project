@@ -131,12 +131,14 @@ def M2CLTrainer(args):
             torch.save(checkpoint, f"checkpoint/m2cl_ckp_ep_{epoch}.pt")
             # torch.save(network.state_dict(), f"checkpoint/m2cl_ckp_ep_{epoch}.pt")
         if args.test_all_epoch:
-
             test_loss = do_test(network, testloader, device)
-    if not args.test_all_epoch:
-        test_loss = do_test(network, testloader, device)
-        
-    print("[FINAL] Best accuracy: ", best_acc)
+            
+    
+    checkpoint = torch.load(checkpoint, f"checkpoint/_m2cl_ckp_best.pt")
+    network.load_state_dict(checkpoint['model_state'])
+    print("Load best checkpoint!")
+    
+    test_loss = do_test(network, testloader, device)
         
 def BaseRes18Trainer(args):
     print("Using Resnet 18")
@@ -225,10 +227,12 @@ def BaseRes18Trainer(args):
         if args.test_all_epoch:
 
             test_loss = do_test_resnet(network, testloader, device)
-    if not args.test_all_epoch:
-        test_loss = do_test_resnet(network, testloader, device)
-        
-    print("[FINAL] Best accuracy: ", best_acc)
+            
+    checkpoint = torch.load(checkpoint, f"checkpoint/_resnet18_ckp_best.pt")
+    network.load_state_dict(checkpoint['model_state'])
+    print("Load best checkpoint!")
+    
+    test_loss = do_test(network, testloader, device)
 
 def get_trainer(args):
     if args.model == "m2cl":
