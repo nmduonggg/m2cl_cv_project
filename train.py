@@ -53,6 +53,7 @@ def M2CLTrainer(args):
     trainloader, valloader = get_train_dataloader(args.source,args.batch_size,args.val_size, augment_transform)
     testloader = get_test_loader(args.target, args.batch_size)
     
+    best_acc = -1e9
     for epoch in range(args.epochs):
         network.train()
         train_loss = 0
@@ -110,6 +111,17 @@ def M2CLTrainer(args):
             y_pred = torch.argmax(preds, 1)
             test_true_pred += torch.sum(y_pred == y).item()
         val_loss_epoch = val_loss_epoch / len(valloader.dataset)
+        
+        cur_acc = test_true_pred / len(valloader.dataset)
+        if cur_acc > best_acc:
+            best_acc = cur_acc
+            checkpoint = {
+                'model_state': network.state_dict(),
+                'optimizer_state': optimizer.state_dict()
+            }
+            torch.save(checkpoint, f"checkpoint/_m2cl_ckp_best.pt")
+            print(f"Save best accuracy {best_acc}")
+                
         print(f"Validation loss: {val_loss_epoch}, accuracy: {test_true_pred/len(valloader.dataset)}")
         if epoch > args.saved_epoch:
             checkpoint = {
