@@ -136,6 +136,8 @@ def M2CLTrainer(args):
     if not args.test_all_epoch:
         test_loss = do_test(network, testloader, device)
         
+    print("[FINAL] Best accuracy: ", best_acc)
+        
 def BaseRes18Trainer(args):
     print("Using Resnet 18")
     network = resnet18(pretrained=True, n_classes=args.n_classes)
@@ -157,6 +159,8 @@ def BaseRes18Trainer(args):
     #Get data
     trainloader, valloader = get_train_dataloader(args.source, args.batch_size, args.val_size, augment_transform)
     testloader = get_test_loader(args.target, args.batch_size)
+    best_acc = -1e9
+    
     for epoch in range(args.epochs):
         network.train()
         train_loss = 0
@@ -188,12 +192,27 @@ def BaseRes18Trainer(args):
         # Validation
         network.eval()
         val_loss_epoch = 0
+        val_true_pred = 0
         for x, y in valloader:
             x,y = x.to(device), y.to(device)
             preds = network(x)
             val_loss = F.cross_entropy(preds, y)
             val_loss_epoch += val_loss.detach()
+            prediction = torch.argmax(preds, 1)
+            val_true_pred += torch.sum(prediction == y).item()
+            
         val_loss_epoch = val_loss_epoch / len(valloader.dataset)
+        cur_acc = val_true_pred / len(valloader.dataset)
+        
+        if cur_acc > best_acc:
+            best_acc = cur_acc
+            checkpoint = {
+                'model_state': network.state_dict(),
+                'optimizer_state': optimizer.state_dict()
+            }
+            torch.save(checkpoint, f"checkpoint/_resnet18_ckp_best.pt")
+            print(f"Save best accuracy {best_acc}")
+        
         print(f"Validation loss: {val_loss_epoch}")
         del train_loss, loss, val_loss_epoch, val_loss
         if epoch > args.saved_epoch:
@@ -208,6 +227,8 @@ def BaseRes18Trainer(args):
             test_loss = do_test_resnet(network, testloader, device)
     if not args.test_all_epoch:
         test_loss = do_test_resnet(network, testloader, device)
+        
+    print("[FINAL] Best accuracy: ", best_acc)
 
 def get_trainer(args):
     if args.model == "m2cl":
