@@ -134,7 +134,7 @@ def M2CLTrainer(args):
             test_loss = do_test(network, testloader, device)
             
     
-    checkpoint = torch.load(checkpoint, f"checkpoint/_m2cl_ckp_best.pt")
+    checkpoint = torch.load(f"checkpoint/_m2cl_ckp_best.pt")
     network.load_state_dict(checkpoint['model_state'])
     print("Load best checkpoint!")
     
@@ -228,7 +228,7 @@ def BaseRes18Trainer(args):
 
             test_loss = do_test_resnet(network, testloader, device)
             
-    checkpoint = torch.load(checkpoint, f"checkpoint/_resnet18_ckp_best.pt")
+    checkpoint = torch.load(f"checkpoint/_resnet18_ckp_best.pt")
     network.load_state_dict(checkpoint['model_state'])
     print("Load best checkpoint!")
     
