@@ -123,13 +123,13 @@ def M2CLTrainer(args):
             print(f"Save best accuracy {best_acc}")
                 
         print(f"Validation loss: {val_loss_epoch}, accuracy: {test_true_pred/len(valloader.dataset)}")
-        if epoch > args.saved_epoch:
-            checkpoint = {
-                'model_state': network.state_dict(),
-                'optimizer_state': optimizer.state_dict()
-            }
-            torch.save(checkpoint, f"checkpoint/m2cl_ckp_ep_{epoch}.pt")
-            # torch.save(network.state_dict(), f"checkpoint/m2cl_ckp_ep_{epoch}.pt")
+        # if epoch > args.saved_epoch:
+        #     checkpoint = {
+        #         'model_state': network.state_dict(),
+        #         'optimizer_state': optimizer.state_dict()
+        #     }
+        #     torch.save(checkpoint, f"checkpoint/m2cl_ckp_ep_{epoch}.pt")
+            
         if args.test_all_epoch:
             test_loss = do_test(network, testloader, device)
             
@@ -217,13 +217,13 @@ def BaseRes18Trainer(args):
         
         print(f"Validation loss: {val_loss_epoch}")
         del train_loss, loss, val_loss_epoch, val_loss
-        if epoch > args.saved_epoch:
-            checkpoint = {
-                'model_state': network.state_dict(),
-                'optimizer_state': optimizer.state_dict()
-            }
-            torch.save(checkpoint, f"checkpoint/res18_ckp_ep_{epoch}.pt")
-            # torch.save(network.state_dict(), f"checkpoint/res18_ckp_ep_{epoch}.pt")
+        # if epoch > args.saved_epoch:
+        #     checkpoint = {
+        #         'model_state': network.state_dict(),
+        #         'optimizer_state': optimizer.state_dict()
+        #     }
+        #     torch.save(checkpoint, f"checkpoint/res18_ckp_ep_{epoch}.pt")
+           
         if args.test_all_epoch:
 
             test_loss = do_test_resnet(network, testloader, device)
