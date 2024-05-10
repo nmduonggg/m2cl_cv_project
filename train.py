@@ -29,11 +29,28 @@ def get_args():
     parser.add_argument("--test_all_epoch", action="store_true", help="Test on target domain after each epoch")
     parser.add_argument("--contrastive_weight", type=float, default=0.01, help="contrastive weight")
     return parser.parse_args()
-    
+
+class EarlyStopper():
+    def __init__(self, patience=10):
+        super().__init__()
+        self.patience = patience
+        self.best_val_loss = float('inf')
+        self.counter = 0
+        
+    def early_stopping(self, val_loss):
+        if val_loss < self.best_val_loss:
+            self.best_val_loss = val_loss
+            self.counter = 0
+        else: 
+            self.counter += 1
+        if self.counter == self.patience: return True
+        
+        return False
 
 def M2CLTrainer(args):
     print('Using M2CL')
     network = M2CL18(args.n_classes, pretrained=True)
+    early_stopper = EarlyStopper(patience=10)
     
     optimizer = torch.optim.SGD(
             network.parameters(),
@@ -132,6 +149,8 @@ def M2CLTrainer(args):
             
         if args.test_all_epoch:
             test_loss = do_test(network, testloader, device)
+        if early_stopper.early_stopping(val_loss_epoch):
+            break
             
     
     checkpoint = torch.load(f"checkpoint/_m2cl_ckp_best.pt")
@@ -143,6 +162,7 @@ def M2CLTrainer(args):
 def BaseRes18Trainer(args):
     print("Using Resnet 18")
     network = resnet18(pretrained=True, n_classes=args.n_classes)
+    early_stopper = EarlyStopper()
     
     # print(network)
     optimizer = torch.optim.SGD(
@@ -216,7 +236,6 @@ def BaseRes18Trainer(args):
             print(f"Save best accuracy {best_acc}")
         
         print(f"Validation loss: {val_loss_epoch}")
-        del train_loss, loss, val_loss_epoch, val_loss
         # if epoch > args.saved_epoch:
         #     checkpoint = {
         #         'model_state': network.state_dict(),
@@ -225,8 +244,10 @@ def BaseRes18Trainer(args):
         #     torch.save(checkpoint, f"checkpoint/res18_ckp_ep_{epoch}.pt")
            
         if args.test_all_epoch:
-
             test_loss = do_test_resnet(network, testloader, device)
+        if early_stopper.early_stopping(val_loss_epoch):
+            break
+        del train_loss, loss, val_loss_epoch, val_loss
             
     checkpoint = torch.load(f"checkpoint/_resnet18_ckp_best.pt")
     network.load_state_dict(checkpoint['model_state'])
