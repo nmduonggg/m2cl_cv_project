@@ -82,7 +82,7 @@ def M2CLTrainer(args):
                 custom_loss = my_loss(conv_act,
                                     same_indexes,
                                     args.contrastive_weight,
-                                    0.2)
+                                    1.0)
 
                 ce_loss = F.cross_entropy(preds, y)
 
